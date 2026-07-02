@@ -1,5 +1,54 @@
+# Build outputs
 build/
+cmake-build-*/
+out/
+Debug/
+Release/
+RelWithDebInfo/
+MinSizeRel/
+
+# CMake / Ninja generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+build.ninja
+.ninja_deps
+.ninja_log
+
+# Firmware binaries and debug artifacts
+*.elf
+*.map
+*.hex
+*.bin
+*.srec
+*.list
+*.lst
+*.d
+*.o
+*.obj
+*.a
+
+# STM32Cube generated scratch/cache files
 mx.scratch
-!.settings
+.metadata/
+.externalToolBuilders/
+*.launch
+*.stldr
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# Local tool/agent state
 .agents/
 .codex/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+

@@ -263,17 +263,18 @@ are ignored.
 
 ### 6.2 Address and Register Sequencing
 
-The I2C callbacks implement single-byte sequential register access:
+The I2C callbacks implement a compact single-register access model:
 
 1. On slave address match for master write, the first received byte is treated
    as the register word address.
 2. If the matched I2C address corresponds to the GreenPAK block-1 address,
    firmware ORs the received byte with `0x0100`.
-3. Further received bytes are written to the selected register, with
-   auto-increment after each byte.
-4. On master read, firmware returns the current register value and
-   auto-increments after each transmitted byte.
-5. Listen mode is restarted after listen completion or I2C error.
+3. The next received byte, if present, is written to the selected register.
+4. On master read, firmware returns one byte from the current register and then
+   auto-increments the internal register index.
+5. Listen mode is restarted after listen completion.
+6. If the STM32G0 HAL reports a slave transfer setup failure or I2C error, the
+   main loop de-initializes/re-initializes I2C1 and re-enters listen mode.
 
 `SLG_BASE_I2C_ADDRESS_7BIT` is `0x10`, and
 `SLG_BLOCK1_I2C_ADDRESS_7BIT` is `0x11`. The current CubeMX/HAL own address
@@ -285,9 +286,23 @@ configuration listens on the block-1 address path used for register `0x01DB`.
 | --- | --- | --- |
 | SysTick | `SysTick_Handler` | Increments HAL millisecond tick used for debounce and release delays |
 | EXTI4_15 | `EXTI4_15_IRQHandler` | Dispatches PA6 reset-button edges to HAL EXTI |
-| I2C1 | `I2C1_IRQHandler` | Dispatches I2C1 event or error handling |
+| I2C1 | `I2C1_IRQHandler` | Dispatches I2C1 event and error handling |
 
 All configured peripheral interrupts currently use priority `0,0`.
+
+The STM32G0 HAL dispatches GPIO EXTI edges through
+`HAL_GPIO_EXTI_Rising_Callback` and `HAL_GPIO_EXTI_Falling_Callback`. Both
+callbacks update the reset-button debounce sample timestamp for
+`RESET_BUTTON_B`.
+
+For I2C1, the IRQ handler calls both HAL event and error handlers so STOP/NACK
+and bus-error paths are serviced without leaving the peripheral in a stretched
+state. If a slave receive/transmit setup fails or an I2C error callback occurs,
+firmware requests a main-loop I2C recovery. The recovery path de-initializes and
+re-initializes I2C1, resets the register-address state, and re-enters listen
+mode. Debug variables `reset_ctrl_i2c_recover_count`,
+`reset_ctrl_i2c_last_error`, and `reset_ctrl_i2c_last_isr` record recovery
+activity.
 
 ## 8. Power-On and Runtime Sequences
 
