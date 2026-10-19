@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Production programming procedure for the KR260 STM32G031 reset controller.">
+  <title>Production Programming Guide — KR260 Reset Controller</title>
+  <style>
+    :root {
+      --grl-orange: #ff8200;
+      --grl-orange-dark: #d96f00;
+      --grl-charcoal: #4f555a;
+      --grl-charcoal-dark: #343a3f;
+      --grl-text: #3f454a;
+      --grl-text-muted: #686d72;
+      --grl-divider: #c9cccf;
+      --grl-surface: #fafafa;
+      --grl-surface-alt: #f3f3f3;
+      --grl-warning-text: #9b4700;
+      --grl-warning-background: #fff3e6;
+      --success: #287a45;
+      --success-background: #edf7f0;
+      --danger: #a42c2c;
+      --white: #fff;
+      --shadow: 0 18px 48px rgba(52, 58, 63, .10);
+    }
+
+    * { box-sizing: border-box; }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 1.5rem;
+    }
+
+    body {
+      margin: 0;
+      color: var(--grl-text);
+      background: #e9eaeb;
+      font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.62;
+    }
+
+    a { color: var(--grl-orange-dark); text-underline-offset: .16em; }
+    a:hover { color: var(--grl-warning-text); }
+
+    code {
+      padding: .08em .34em;
+      border: 1px solid #dedfe0;
+      border-radius: .25rem;
+      color: var(--grl-charcoal-dark);
+      background: var(--grl-surface-alt);
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: .9em;
+      overflow-wrap: anywhere;
+    }
+
+    .skip-link {
+      position: fixed;
+      z-index: 100;
+      top: .75rem;
+      left: .75rem;
+      padding: .65rem 1rem;
+      color: var(--white);
+      background: var(--grl-charcoal-dark);
+      transform: translateY(-160%);
+    }
+
+    .skip-link:focus { transform: translateY(0); }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px minmax(0, 980px);
+      gap: 1.5rem;
+      justify-content: center;
+      align-items: start;
+      padding: 1.5rem;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 1.5rem;
+      max-height: calc(100vh - 3rem);
+      overflow: auto;
+      color: var(--white);
+      background: var(--grl-charcoal-dark);
+      border-top: 5px solid var(--grl-orange);
+      border-radius: .25rem;
+      box-shadow: var(--shadow);
+    }
+
+    .sidebar-header { padding: 1.35rem 1.35rem 1rem; }
+
+    .eyebrow {
+      margin: 0 0 .35rem;
+      color: var(--grl-orange);
+      font-size: .73rem;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-title {
+      margin: 0;
+      color: var(--white);
+      font-size: 1.05rem;
+      line-height: 1.35;
+    }
+
+    .sidebar nav { border-top: 1px solid rgba(255, 255, 255, .14); }
+
+    .sidebar nav a {
+      display: block;
+      padding: .58rem 1.35rem;
+      border-left: 3px solid transparent;
+      color: #eaebec;
+      font-size: .84rem;
+      line-height: 1.3;
+      text-decoration: none;
+    }
+
+    .sidebar nav a:hover,
+    .sidebar nav a:focus {
+      border-left-color: var(--grl-orange);
+      color: var(--white);
+      background: rgba(255, 255, 255, .07);
+    }
+
+    .sidebar-meta {
+      margin: 1rem 1.35rem 1.35rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba(255, 255, 255, .14);
+      color: #cfd1d2;
+      font-size: .75rem;
+      line-height: 1.6;
+    }
+
+    .report {
+      min-width: 0;
+      background: var(--grl-surface);
+      box-shadow: var(--shadow);
+    }
+
+    .cover {
+      position: relative;
+      min-height: 680px;
+      padding: 4.5rem 5rem 3.2rem;
+      overflow: hidden;
+      border-top: 8px solid var(--grl-orange);
+      background:
+        linear-gradient(135deg, transparent 74%, rgba(79, 85, 90, .055) 74%),
+        var(--grl-surface);
+    }
+
+    .cover::after {
+      content: "";
+      position: absolute;
+      right: -110px;
+      bottom: -145px;
+      width: 360px;
+      height: 360px;
+      border: 48px solid rgba(255, 130, 0, .07);
+      border-radius: 50%;
+    }
+
+    .brand-mark {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      color: var(--grl-charcoal-dark);
+      font-size: .78rem;
+      font-weight: 750;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark::before {
+      content: "";
+      width: 32px;
+      height: 5px;
+      background: var(--grl-orange);
+    }
+
+    .cover-copy { max-width: 690px; margin-top: 6.5rem; }
+
+    .cover h1 {
+      margin: 0;
+      color: var(--grl-orange);
+      font-size: clamp(2.8rem, 7vw, 5.1rem);
+      font-weight: 800;
+      letter-spacing: -.045em;
+      line-height: .96;
+    }
+
+    .cover .subtitle {
+      max-width: 630px;
+      margin: 1.4rem 0 0;
+      color: var(--grl-charcoal);
+      font-size: clamp(1.35rem, 3vw, 2rem);
+      font-weight: 350;
+      line-height: 1.25;
+    }
+
+    .title-rule {
+      width: 92px;
+      height: 6px;
+      margin: 2rem 0;
+      background: var(--grl-orange);
+    }
+
+    .cover-summary {
+      max-width: 610px;
+      margin: 0;
+      color: var(--grl-text-muted);
+      font-size: 1.03rem;
+    }
+
+    .cover-meta {
+      position: absolute;
+      right: 5rem;
+      bottom: 3rem;
+      left: 5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .7rem 2rem;
+      padding-top: 1rem;
+      border-top: 5px solid var(--grl-charcoal);
+      color: var(--grl-text-muted);
+      font-size: .78rem;
+    }
+
+    .cover-meta::before {
+      content: "";
+      position: absolute;
+      top: -5px;
+      left: 0;
+      width: 96px;
+      height: 5px;
+      background: var(--grl-orange);
+    }
+
+    .cover-meta strong { color: var(--grl-charcoal-dark); }
+
+    .content { padding: 3rem 5rem 4rem; }
+
+    section { margin: 0 0 3rem; }
+
+    .section-title {
+      display: flex;
+      align-items: baseline;
+      gap: .85rem;
+      margin: 0 0 1.5rem;
+      padding: .78rem 1rem;
+      border-left: 6px solid var(--grl-orange);
+      color: var(--white);
+      background: var(--grl-charcoal-dark);
+      font-size: 1.45rem;
+      line-height: 1.25;
+    }
+
+    .section-title .number {
+      color: #d8dadb;
+      font-size: .8em;
+      font-weight: 500;
+    }
+
+    h3 {
+      margin: 2rem 0 1rem;
+      padding-bottom: .4rem;
+      border-bottom: 2px solid var(--grl-orange);
+      color: var(--grl-charcoal-dark);
+      font-size: 1.15rem;
+      line-height: 1.35;
+    }
+
+    p { margin: .75rem 0; }
+    ul, ol { margin: .8rem 0 1rem; padding-left: 1.5rem; }
+    li { margin: .45rem 0; padding-left: .2rem; }
+    li::marker { color: var(--grl-orange-dark); font-weight: 750; }
+
+    .lead {
+      color: var(--grl-charcoal);
+      font-size: 1.08rem;
+      line-height: 1.7;
+    }
+
+    .table-wrap {
+      margin: 1.2rem 0 1.6rem;
+      overflow-x: auto;
+      border: 1px solid var(--grl-divider);
+      border-top: 4px solid var(--grl-orange);
+      background: var(--white);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .9rem;
+      line-height: 1.45;
+    }
+
+    th, td {
+      padding: .78rem .9rem;
+      border-bottom: 1px solid var(--grl-divider);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    thead th {
+      color: var(--white);
+      background: var(--grl-charcoal);
+      font-weight: 700;
+    }
+
+    tbody tr:nth-child(even) { background: var(--grl-surface-alt); }
+    tbody tr:last-child td { border-bottom: 0; }
+    td:first-child { font-weight: 650; color: var(--grl-charcoal-dark); }
+
+    .document-control td:first-child { width: 31%; }
+
+    .checksum {
+      font-size: .78rem;
+      word-break: break-all;
+    }
+
+    .callout {
+      margin: 1rem 0;
+      padding: 1rem 1.1rem;
+      border: 1px solid #ffc17d;
+      border-left: 6px solid var(--grl-orange);
+      color: var(--grl-warning-text);
+      background: var(--grl-warning-background);
+    }
+
+    .callout strong:first-child {
+      display: block;
+      margin-bottom: .18rem;
+      color: var(--grl-warning-text);
+      font-size: .78rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .callout.note {
+      color: var(--grl-text);
+      border-color: var(--grl-divider);
+      border-left-color: var(--grl-charcoal);
+      background: var(--grl-surface-alt);
+    }
+
+    .callout.note strong:first-child { color: var(--grl-charcoal-dark); }
+
+    .download-grid,
+    .criteria-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+      margin: 1.2rem 0;
+    }
+
+    .download-card,
+    .criterion {
+      padding: 1.1rem;
+      border: 1px solid var(--grl-divider);
+      border-top: 4px solid var(--grl-orange);
+      background: var(--white);
+    }
+
+    .download-card strong,
+    .criterion strong {
+      display: block;
+      margin-bottom: .3rem;
+      color: var(--grl-charcoal-dark);
+    }
+
+    .download-card span { display: block; color: var(--grl-text-muted); font-size: .86rem; }
+
+    .download-card a {
+      display: inline-block;
+      margin-top: .75rem;
+      font-weight: 700;
+    }
+
+    .screenshot {
+      margin: 1.6rem 0 2rem;
+      padding: .7rem;
+      border: 1px solid var(--grl-divider);
+      background: var(--white);
+      box-shadow: 0 7px 20px rgba(52, 58, 63, .08);
+    }
+
+    .screenshot img {
+      display: block;
+      width: 100%;
+      height: auto;
+      border: 1px solid #e1e2e3;
+    }
+
+    .screenshot figcaption {
+      padding: .7rem .35rem .1rem;
+      color: var(--grl-text-muted);
+      font-size: .82rem;
+    }
+
+    .step-group {
+      margin: 1rem 0;
+      padding: .15rem 1.3rem .35rem;
+      border-left: 3px solid var(--grl-divider);
+    }
+
+    .step-group:hover { border-left-color: var(--grl-orange); }
+
+    .pass-badge {
+      display: inline-block;
+      padding: .12rem .48rem;
+      border: 1px solid #9dc9aa;
+      border-radius: 2rem;
+      color: var(--success);
+      background: var(--success-background);
+      font-size: .76rem;
+      font-weight: 800;
+      letter-spacing: .05em;
+    }
+
+    .acceptance {
+      margin: 1.8rem 0;
+      padding: 1.3rem;
+      border: 2px solid var(--grl-charcoal);
+      background: var(--white);
+    }
+
+    .acceptance > strong {
+      display: block;
+      color: var(--grl-charcoal-dark);
+      font-size: 1.05rem;
+    }
+
+    .criterion { border-top-color: var(--success); }
+
+    .criterion .pass-badge { margin-bottom: .55rem; }
+
+    .troubleshooting td:first-child { width: 29%; }
+
+    .report-footer {
+      position: relative;
+      padding: 1.3rem 5rem;
+      color: #e8e9ea;
+      background: var(--grl-charcoal);
+      font-size: .78rem;
+    }
+
+    .report-footer::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 5rem;
+      width: 100px;
+      height: 5px;
+      background: var(--grl-orange);
+    }
+
+    @media (max-width: 1050px) {
+      .layout { grid-template-columns: minmax(0, 900px); }
+      .sidebar { position: static; max-height: none; }
+      .sidebar nav { display: grid; grid-template-columns: repeat(2, 1fr); }
+      .sidebar-meta { display: none; }
+    }
+
+    @media (max-width: 700px) {
+      body { background: var(--grl-surface); }
+      .layout { display: block; padding: 0; }
+      .sidebar { border-radius: 0; box-shadow: none; }
+      .sidebar nav { grid-template-columns: 1fr; }
+      .cover { min-height: 720px; padding: 3rem 1.5rem 2rem; }
+      .cover-copy { margin-top: 4rem; }
+      .cover-meta { right: 1.5rem; bottom: 2rem; left: 1.5rem; }
+      .content { padding: 2.3rem 1.25rem; }
+      .download-grid, .criteria-grid { grid-template-columns: 1fr; }
+      .section-title { font-size: 1.25rem; }
+      .report-footer { padding: 1.3rem 1.5rem; }
+      .report-footer::before { left: 1.5rem; }
+    }
+
+    @media print {
+      @page { size: A4; margin: 13mm 12mm 15mm; }
+      body { background: var(--white); font-size: 10pt; line-height: 1.45; }
+      .layout { display: block; padding: 0; }
+      .sidebar, .skip-link { display: none; }
+      .report { box-shadow: none; }
+      .cover {
+        min-height: 255mm;
+        padding: 30mm 18mm 20mm;
+        break-after: page;
+      }
+      .cover-copy { margin-top: 46mm; }
+      .cover h1 { font-size: 43pt; }
+      .cover .subtitle { font-size: 19pt; }
+      .cover-meta { right: 18mm; bottom: 17mm; left: 18mm; }
+      .content { padding: 0; }
+      section { break-before: page; margin: 0; }
+      section:first-child { break-before: auto; }
+      .section-title { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      h3, .callout, .table-wrap, .screenshot, .acceptance { break-inside: avoid; }
+      .screenshot { box-shadow: none; }
+      .report-footer { display: none; }
+      a { color: var(--grl-text); text-decoration: none; }
+      a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 8pt; overflow-wrap: anywhere; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to procedure</a>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Document navigation">
+      <div class="sidebar-header">
+        <p class="eyebrow">Production guide</p>
+        <p class="sidebar-title">KR260 Reset Controller</p>
+      </div>
+      <nav aria-label="Contents">
+        <a href="#document-control">Document control</a>
+        <a href="#purpose">1. Purpose</a>
+        <a href="#required-items">2. Required items</a>
+        <a href="#safety">3. Safety &amp; quality</a>
+        <a href="#connections">4. SWD connections</a>
+        <a href="#before-programming">5. Before programming</a>
+        <a href="#connect">6. Connect to target</a>
+        <a href="#program">7. Program &amp; verify</a>
+        <a href="#functional-check">8. Functional check</a>
+        <a href="#troubleshooting">9. Troubleshooting</a>
+        <a href="#software-version">10. Software version</a>
+      </nav>
+      <div class="sidebar-meta">
+        STM32G031K8T6 · SWD<br>
+        Document revision: Draft 0.1<br>
+        Effective: 16 October 2026
+      </div>
+    </aside>
+
+    <main class="report" id="main-content">
+      <header class="cover">
+        <div class="brand-mark">Technical documentation</div>
+        <div class="cover-copy">
+          <p class="eyebrow">Manufacturing · Controlled procedure</p>
+          <h1>Production<br>Programming Guide</h1>
+          <p class="subtitle">KR260 Reset Controller</p>
+          <div class="title-rule" aria-hidden="true"></div>
+          <p class="cover-summary">Programming and verification of the STM32G031K8T6 reset controller using STLINK-V3SET and STM32CubeProgrammer.</p>
+        </div>
+        <div class="cover-meta">
+          <span><strong>Revision</strong> Draft 0.1</span>
+          <span><strong>Firmware</strong> 0.1</span>
+          <span><strong>Effective date</strong> 16 October 2026</span>
+          <span><strong>Owner</strong> Prasanna · Firmware Team</span>
+        </div>
+      </header>
+
+      <div class="content">
+        <section id="document-control">
+          <h2 class="section-title">Document control</h2>
+          <div class="table-wrap">
+            <table class="document-control">
+              <tbody>
+                <tr><td>Product / assembly</td><td>KR260 Reset Controller</td></tr>
+                <tr><td>Target MCU</td><td>STM32G031K8T6 (64 KB Flash, Arm Cortex-M0+)</td></tr>
+                <tr><td>Programmer</td><td>STLINK-V3SET</td></tr>
+                <tr><td>Programming interface</td><td>SWD</td></tr>
+                <tr><td>Programming software</td><td>STM32CubeProgrammer v2.20.0 or approved production version</td></tr>
+                <tr><td>Firmware file</td><td><code>fw_kr260_g031_reset.elf</code></td></tr>
+                <tr><td>Firmware revision</td><td><code>0.1</code></td></tr>
+                <tr><td>Firmware SHA-256</td><td><code class="checksum">6a8dfa501cb82b7f2b03ed420f9e6a9a8a9f8b62626d8c7e7b10ce98fb19ef2a</code></td></tr>
+                <tr><td>Document revision</td><td>Draft 0.1</td></tr>
+                <tr><td>Owner</td><td>Prasanna | Firmware Team</td></tr>
+                <tr><td>Effective date</td><td>16 October 2026</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="purpose">
+          <h2 class="section-title"><span class="number">01</span> Purpose</h2>
+          <p class="lead">This guide explains how to program the STM32G031K8T6 reset controller with an approved <code>.elf</code> firmware file, using an STLINK-V3SET and the graphical interface of STM32CubeProgrammer.</p>
+        </section>
+
+        <section id="required-items">
+          <h2 class="section-title"><span class="number">02</span> Required items</h2>
+          <div class="download-grid">
+            <div class="download-card">
+              <strong>STM32CubeProgrammer</strong>
+              <span>Use the approved production software package.</span>
+              <a href="https://grlps-my.sharepoint.com/:u:/p/fw/IQBYrHkDFOZpR4nq0e218JvmAX4YjryZnAmpYM0LYK7fcXQ?e=R4d8rQ">Download software package</a>
+            </div>
+            <div class="download-card">
+              <strong>Reset-controller firmware</strong>
+              <span><code>fw_kr260_g031_reset.elf</code></span>
+              <a href="https://grlps-my.sharepoint.com/:u:/p/fw/IQCyygucqgodTKfWjiMmCHJUAUTN4A2FJllmqMPkATm5Q0g?e=Mvl4iP">Download approved firmware</a>
+            </div>
+          </div>
+          <ul>
+            <li>Production PC with an available USB port.</li>
+            <li>STLINK-V3SET with USB cable.</li>
+            <li>Approved programming cable, adapter, or production fixture.</li>
+            <li>Carrier card and its approved power supply. The Kria SOM is <strong>not required and must not be fitted during STM32 programming</strong>.</li>
+            <li>ESD-protected workstation and wrist strap.</li>
+          </ul>
+        </section>
+
+        <section id="safety">
+          <h2 class="section-title"><span class="number">03</span> Important safety and quality rules</h2>
+          <div class="callout"><strong>Caution · ESD</strong>Handle the board only at an ESD-protected workstation.</div>
+          <div class="callout"><strong>Caution · Wiring</strong>Turn target power off before connecting or disconnecting the programming cable. An offset or reversed connector may damage the target board or STLINK-V3SET.</div>
+          <div class="callout"><strong>Caution · Target power</strong>The STLINK-V3SET senses the target voltage through <code>VTref</code>; the production fixture must power the target board using its approved supply unless the fixture specification explicitly states otherwise. Do not assume the debug connector powers the board.</div>
+          <div class="callout"><strong>Caution · Option bytes</strong>Do not change Read Out Protection, write protection, boot configuration, or any other option byte unless a separate, approved production instruction explicitly requires it.</div>
+          <p><strong>Use only the released <code>.elf</code> file identified in the work order and supplied through the approved firmware link.</strong></p>
+        </section>
+
+        <section id="connections">
+          <h2 class="section-title"><span class="number">04</span> SWD connections</h2>
+          <p>Connect the approved fixture according to the board drawing. The minimum signals required by this procedure are:</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>STLINK-V3SET signal</th><th>Target signal</th><th>Purpose</th></tr></thead>
+              <tbody>
+                <tr><td><code>VTref</code> / target voltage sense</td><td>Target I/O supply reference</td><td>Allows the probe to detect target logic voltage</td></tr>
+                <tr><td><code>GND</code></td><td>Target ground</td><td>Common electrical reference</td></tr>
+                <tr><td><code>SWDIO</code></td><td>MCU <code>SWDIO</code></td><td>Serial-wire bidirectional data</td></tr>
+                <tr><td><code>SWCLK</code></td><td>MCU <code>SWCLK</code></td><td>Serial-wire clock</td></tr>
+                <tr><td><code>NRST</code></td><td>MCU reset</td><td>Required for the selected Hardware reset connection mode</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="before-programming">
+          <h2 class="section-title"><span class="number">05</span> Before programming</h2>
+          <div class="step-group">
+            <ol>
+              <li>Download the approved firmware package and save it to the controlled local production folder.</li>
+              <li>Confirm the file name is exactly <code>fw_kr260_g031_reset.elf</code>.</li>
+              <li>Verify its SHA-256 checksum against the value in the <a href="#document-control">Document control</a> table. If it does not match, <strong>stop and quarantine the file</strong>. Firmware revision <code>0.1</code> is not read back from the STM32; the approved file name and SHA-256 checksum identify the production firmware.</li>
+              <li>Confirm that the Kria SOM is not installed. Only the carrier card is required for programming the reset controller.</li>
+              <li>With carrier-card power <strong>off</strong>, connect the STLINK-V3SET to the target.</li>
+              <li>Connect the STLINK-V3SET to the PC by USB.</li>
+              <li>Apply the approved carrier-card power.</li>
+            </ol>
+          </div>
+        </section>
+
+        <section id="connect">
+          <h2 class="section-title"><span class="number">06</span> Connect to the target</h2>
+          <div class="step-group">
+            <ol>
+              <li>Open <strong>STM32CubeProgrammer</strong>.</li>
+              <li>Select <strong>ST-LINK</strong> as the connection type.</li>
+              <li>Set the ST-LINK configuration to the approved values shown below.</li>
+            </ol>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Setting</th><th>Approved value</th></tr></thead>
+              <tbody>
+                <tr><td>Port</td><td><code>SWD</code></td></tr>
+                <tr><td>Frequency</td><td><code>8000 kHz</code></td></tr>
+                <tr><td>Mode</td><td><code>Normal</code></td></tr>
+                <tr><td>Access port</td><td><code>0</code></td></tr>
+                <tr><td>Reset mode</td><td><code>Hardware reset</code></td></tr>
+                <tr><td>Speed</td><td><code>Reliable</code></td></tr>
+                <tr><td>Shared</td><td><code>Disabled</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="step-group">
+            <ol start="4">
+              <li>Confirm that the expected STLINK-V3SET serial number is displayed when the workstation or fixture controls probe assignment.</li>
+              <li>Select <strong>Connect</strong>.</li>
+            </ol>
+          </div>
+          <figure class="screenshot">
+            <img src="references/ST1.png" alt="STM32CubeProgrammer ST-LINK configuration panel with the Connect button highlighted" width="1562" height="886" loading="lazy">
+            <figcaption>Figure 1 · Select Connect in STM32CubeProgrammer.</figcaption>
+          </figure>
+          <div class="step-group">
+            <ol start="6">
+              <li>Confirm that the top-right status changes to <strong>Connected</strong>.</li>
+              <li>Confirm the target information is consistent with the production device.</li>
+            </ol>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Displayed field</th><th>Expected result</th></tr></thead>
+              <tbody>
+                <tr><td>Board / probe</td><td><code>STLINK-V3SET</code></td></tr>
+                <tr><td>Device family</td><td><code>STM32G03x/STM32G04x</code></td></tr>
+                <tr><td>Flash size</td><td><code>64 KB</code></td></tr>
+                <tr><td>CPU</td><td><code>Cortex-M0+</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <figure class="screenshot">
+            <img src="references/ST2.png" alt="STM32CubeProgrammer connected-target status and device information" width="1505" height="865" loading="lazy">
+            <figcaption>Figure 2 · Connected target and target-information area.</figcaption>
+          </figure>
+        </section>
+
+        <section id="program">
+          <h2 class="section-title"><span class="number">07</span> Program and verify the firmware</h2>
+          <div class="step-group">
+            <ol>
+              <li>Select the <strong>Erasing &amp; Programming</strong> icon in the left toolbar (down-arrow symbol).</li>
+              <li>In <strong>File path</strong>, select <strong>Browse</strong> and choose the approved <code>fw_kr260_g031_reset.elf</code> file.</li>
+              <li>Reconfirm the complete file name and its folder before continuing.</li>
+              <li>Set the programming options to the required states below.</li>
+            </ol>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Option</th><th>Required state</th></tr></thead>
+              <tbody>
+                <tr><td>Skip flash erase before programming</td><td><strong>Cleared</strong></td></tr>
+                <tr><td>Verify programming</td><td><strong>Selected</strong></td></tr>
+                <tr><td>Run after programming</td><td><strong>Cleared</strong></td></tr>
+                <tr><td>Full Flash memory checksum</td><td>Cleared unless required by the production traveler</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout note"><strong>Address handling</strong>For an <code>.elf</code> file, STM32CubeProgrammer obtains the programmed addresses from the file. Do not manually enter a start address.</div>
+          <div class="step-group">
+            <ol start="5">
+              <li>Select <strong>Start Programming</strong>.</li>
+              <li>Do not remove power, unplug USB, move the fixture, or disconnect the cable while programming is in progress.</li>
+              <li>Wait for both programming and verification to finish.</li>
+              <li>Confirm the log reports successful download and verification with no red error messages. A download message without successful verification is <strong>not</strong> an acceptable production result.</li>
+            </ol>
+          </div>
+          <figure class="screenshot">
+            <img src="references/ST3.png" alt="STM32CubeProgrammer Erasing and Programming screen for selecting the ELF and starting programming" width="1502" height="863" loading="lazy">
+            <figcaption>Figure 3 · Select the ELF file and start programming.</figcaption>
+          </figure>
+          <div class="callout note"><strong>Screenshot note</strong>The screenshot is a navigation aid. During the real procedure, keep the target connected and select <strong>Verify programming</strong>, even if the checkbox appears cleared in the example image.</div>
+        </section>
+
+        <section id="functional-check">
+          <h2 class="section-title"><span class="number">08</span> Disconnect and perform the functional check</h2>
+
+          <h3>8.1 Prepare the assembly</h3>
+          <ol>
+            <li>Select <strong>Disconnect</strong> in STM32CubeProgrammer.</li>
+            <li>Turn carrier-card power off and allow the power rails to discharge.</li>
+            <li>Disconnect the STLINK-V3SET programming fixture from the carrier card.</li>
+            <li>Install the approved Kria SOM on the carrier card while power remains off.</li>
+            <li>Connect the normal boot media, serial console, network cable, and other test equipment required by the production test station.</li>
+          </ol>
+
+          <h3>8.2 Verify power-on boot</h3>
+          <ol>
+            <li>Capture the Kria boot console and apply normal product power.</li>
+            <li>Using the programmed SD card, confirm that the Kria completes U-Boot and Linux startup.</li>
+            <li>Confirm that the console reaches <code>Reached target Login Prompts</code> and automatic login.</li>
+            <li>Record the power-on boot result as <span class="pass-badge">PASS</span>.</li>
+          </ol>
+
+          <h3>8.3 Verify soft-reset boot</h3>
+          <ol>
+            <li>Initiate the product's approved software reset while the system is running.</li>
+            <li>Confirm that a new boot sequence appears on the console without manually cycling carrier-card power.</li>
+            <li>Confirm that Linux again reaches <code>Reached target Login Prompts</code> and automatic login.</li>
+            <li>Record the soft-reset boot result as <span class="pass-badge">PASS</span>.</li>
+          </ol>
+
+          <h3>8.4 Verify QSPI firmware-update mode</h3>
+          <ol>
+            <li>Use the product's approved control sequence to request QSPI firmware-update mode.</li>
+            <li>Confirm that the console enters the recovery image and reports <code>QSPI 32 bit Boot Mode</code>.</li>
+            <li>Confirm that the console reports <code>Xilinx boot image recovery tool web server is running on port 80</code>.</li>
+            <li>Confirm that the firmware-update page is accessible at <a href="http://192.168.0.111"><code>http://192.168.0.111</code></a> from the test PC configured on the same subnet.</li>
+            <li>Record the QSPI firmware-update-mode result as <span class="pass-badge">PASS</span>.</li>
+          </ol>
+
+          <h3>8.5 Complete the test</h3>
+          <ol>
+            <li>Turn product power off after all three functional checks pass.</li>
+            <li>Record the results in the production log.</li>
+            <li>Apply the programmed/inspected label if required by the manufacturing plan.</li>
+          </ol>
+
+          <div class="acceptance">
+            <strong>Final acceptance criteria</strong>
+            <p>The unit passes only when both conditions are met:</p>
+            <div class="criteria-grid">
+              <div class="criterion"><span class="pass-badge">REQUIRED</span><strong>Program &amp; verify</strong>STM32CubeProgrammer reports successful programming <em>and</em> verification.</div>
+              <div class="criterion"><span class="pass-badge">REQUIRED</span><strong>Functional test</strong>The product-specific functional test passes.</div>
+            </div>
+          </div>
+        </section>
+
+        <section id="troubleshooting">
+          <h2 class="section-title"><span class="number">09</span> Troubleshooting</h2>
+          <div class="table-wrap">
+            <table class="troubleshooting">
+              <thead><tr><th>Symptom</th><th>Operator action</th></tr></thead>
+              <tbody>
+                <tr><td>No ST-LINK detected</td><td>Check the USB cable and PC connection. Confirm the STLINK-V3SET power/status indicators. Try the approved spare USB cable or probe.</td></tr>
+                <tr><td>No target voltage</td><td>Confirm target power is on and <code>VTref</code> and <code>GND</code> are connected. Do not continue until the expected target voltage is present.</td></tr>
+                <tr><td>Cannot connect to target</td><td>Turn power off; reseat the fixture; inspect <code>SWDIO</code>, <code>SWCLK</code>, <code>NRST</code>, <code>VTref</code>, and <code>GND</code>; power on and retry once. If permitted by the station instruction, reduce SWD frequency to <code>4000 kHz</code> and retry.</td></tr>
+                <tr><td>Wrong device or Flash size</td><td><strong>Stop.</strong> Verify that the correct board is loaded and that the fixture is correctly aligned. Do not program the unit.</td></tr>
+                <tr><td>ELF file rejected</td><td>Confirm that the approved file was completely downloaded and has the expected <code>.elf</code> extension and SHA-256 checksum.</td></tr>
+                <tr><td>Programming or verification fails</td><td>Do not mark the unit as passed. Power-cycle the target, inspect/reseat the fixture, and retry once. If it fails again, record the error and move the unit to the designated failure/quarantine area.</td></tr>
+                <tr><td>Functional test fails after programming</td><td>Repeat the functional test once according to its instruction. If it still fails, record the failure and quarantine the unit; do not repeatedly reprogram it unless authorized.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="software-version">
+          <h2 class="section-title"><span class="number">10</span> Reference — software version</h2>
+          <p>The screenshots in this guide were captured with <strong>STM32CubeProgrammer v2.20.0</strong>. Minor visual differences are acceptable only when the production team has approved another software version and the required settings remain available.</p>
+          <figure class="screenshot">
+            <img src="references/ST0.png" alt="STM32CubeProgrammer version 2.20.0 information" width="457" height="205" loading="lazy">
+            <figcaption>Figure 4 · STM32CubeProgrammer version used for the screenshots.</figcaption>
+          </figure>
+        </section>
+      </div>
+
+      <footer class="report-footer">
+        KR260 Reset Controller · Production Programming Guide · Draft 0.1 · Controlled copy when viewed from the approved document repository
+      </footer>
+    </main>
+  </div>
+</body>
+</html>
